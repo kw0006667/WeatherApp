@@ -137,7 +137,7 @@ export default function Home() {
 
   const getCurrentLocation = (e: React.MouseEvent<HTMLButtonElement>) => {
     navigator.geolocation.getCurrentPosition((position) => {
-      fetch(`http://api.openweathermap.org/geo/1.0/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&limit=5&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_APPID}`)
+      fetch(`https://api.openweathermap.org/geo/1.0/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&limit=5&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_APPID}`)
       .then(responsive => {
         if (responsive.status === 200) {
           return responsive.json() as Promise<GeoData[]>;
@@ -151,7 +151,7 @@ export default function Home() {
           saveCurrentLocationToLocalStorage(data[0]);
 
           if (isCurrentWeatherNeedsRefresh(data[0])) {
-            fetch(`http://localhost:3000/api/weatherapi?lat=${data[0].lat}&lon=${data[0].lon}`)
+            fetch(`./api/weatherapi?lat=${data[0].lat}&lon=${data[0].lon}`)
             .then(response => {
               return response.json() as Promise<WeatherData>;
             })
