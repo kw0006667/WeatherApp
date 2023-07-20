@@ -1,11 +1,11 @@
-import { Current } from "@/types/weatherType";
+import { Current, Daily } from "@/types/weatherType";
 import { Convert } from "@/utilities/convert";
 
 import * as Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { useEffect, useRef, useState } from "react";
 
-function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
+function DailyWeatherViewDOM(props: { daily: Daily[] }) {
   const chartComponentRef = useRef<HighchartsReact.RefObject>(null);
   const [highchartsOptions, setHighchartsOptions] =
     useState<Highcharts.Options | null>(null);
@@ -13,7 +13,7 @@ function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
   useEffect(() => {
     setHighchartsOptions({
       title: {
-        text: "Hourly Weather",
+        text: "Daily Weather",
       },
       subtitle: {
         text:
@@ -25,8 +25,8 @@ function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
         shadow: true
       },
       xAxis: {
-        categories: props.hourly.slice(0, 24).map((item) => {
-          return new Date(item.dt * 1000).getHours().toFixed(0);
+        categories: props.daily.map((item) => {
+          return new Date(item.dt * 1000).getDate().toString();
         }),
         accessibility: {
           description: "Months of the year",
@@ -42,16 +42,16 @@ function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
         },
       }, {
         title: {
-          text: "Precipitation"
+          text: "Precipitation",
         },
         labels: {
-          format: "{value}%"
+          format: "{value} %",
         },
-        opposite: true,
-        max: 100
+        max: 100,
+        opposite: true
       }],
       tooltip: {
-        shared: false,
+        shared: true,
         useHTML: true,
         headerFormat: '<table><tr><th colspan="2">{point.custom.time}</th></tr>',
         pointFormat: '<tr><td>Feels Like: </td><td style="text-align: right"><b>{point.custom.feelslike}</b></td></tr>' +
@@ -76,12 +76,12 @@ function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
           type: "spline",
           name:'Temperature',
           yAxis: 0,
-          data: props.hourly.slice(0, 24).map((item) => {
+          data: props.daily.map((item) => {
               return {
-                y: item.temp,
+                y: item.temp.max,
                 custom: {
                   time: '1234',
-                  feelslike: item.feels_like,
+                  feelslike: item.feels_like.day,
                   humidity: item.humidity,
                   pop: item.pop,
                   uvi: item.uvi,
@@ -101,11 +101,11 @@ function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
           type: "spline",
           name: "Precipitation",
           yAxis: 1,
-          data: props.hourly.slice(0, 24).map((item) => {
+          data: props.daily.map((item) => {
             return {
-              y: item.pop ? item.pop * 100 : 0
+              y: item.pop * 100
             }
-          })
+          }),
         },
       ],
     });
@@ -120,4 +120,4 @@ function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
   );
 }
 
-export default HourlyWeatherViewDOM;
+export default DailyWeatherViewDOM;

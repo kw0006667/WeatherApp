@@ -1,3 +1,10 @@
+import { GeoData } from "./geoType";
+
+export interface WeatherLocationDataset {
+    weatherData: WeatherData;
+    locationData: GeoData;
+}
+
 export interface WeatherData {
     lat:             number;
     lon:             number;

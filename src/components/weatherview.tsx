@@ -7,6 +7,7 @@ import DailyWeatherDOM from "./dailyweathercard";
 import { Convert } from "@/utilities/convert";
 import { TECollapse } from "tw-elements-react";
 import HourlyWeatherViewDOM from "./hourlyweatherview";
+import DailyWeatherViewDOM from "./dailyweatherview";
 
 function WeatherView(props: {
   weatherData: WeatherData;
@@ -23,8 +24,8 @@ function WeatherView(props: {
   };
   
   return (
-    <>
-      <div className="block text-center">
+    <div className="">
+      <div className="flex text-center items-center min-w-max m-auto">
         <div
           className="relative overflow-hidden bg-cover bg-no-repeat"
           data-te-ripple-init
@@ -56,15 +57,16 @@ function WeatherView(props: {
         </div>
       </div>
 
-      <div className="container">
+      <div>
         {/* Hourly weather */}
-        <div className="flex flex-no-wrap overflow-x-scroll scrolling-touch items-start my-8 shadow-sm rounded-lg p-2">
+        {/* <div className="flex flex-no-wrap overflow-x-scroll scrolling-touch items-start my-8 shadow-sm rounded-lg p-2">
           {props.weatherData.hourly.map((item) => (
             <HourlyWeatherDOM key={item.dt} current={item}/>
           ))}
-        </div>
+        </div> */}
 
         <HourlyWeatherViewDOM hourly={props.weatherData.hourly} />
+        <DailyWeatherViewDOM daily={props.weatherData.daily} />
 
         <div id="accordionExample">
           {
@@ -117,8 +119,31 @@ function WeatherView(props: {
               </React.Fragment>
             ))}
         </div>
+
+        <React.Fragment>
+            <div className='my-10 shadow-sm rounded-sm p-2'>
+              <p>Sunrise</p>
+              <p>{Convert.getTime(new Date((props.weatherData.current.sunrise ?? 0) * 1000))} - {Convert.getTime(new Date((props.weatherData.current.sunset ?? 0) * 1000))}</p>
+            </div>
+            <div className='my-10 shadow-sm rounded-sm p-2'>
+              <div>
+                <p>UV</p>
+                <p>{props.weatherData?.current.uvi.toFixed(0)}</p>
+              </div>
+            </div>
+            <div className='my-10 shadow-sm rounded-sm p-2'>
+              <p>Wind</p>
+              <p>Wind Degree: {props.weatherData?.current.wind_deg.toFixed(0)}</p>
+              <p>Wind Speed: {props.weatherData.current.wind_speed.toFixed(0)}</p>
+              <p>Wind Gust: {props.weatherData.current.wind_gust ?? "none" }</p>
+            </div>
+            <div className='my-10 shadow-sm rounded-sm p-2'>
+              <p>Humidity</p>
+              <p>{props.weatherData.current.humidity}</p>
+            </div>
+          </React.Fragment>
       </div>
-    </>
+    </div>
   );
 }
 
