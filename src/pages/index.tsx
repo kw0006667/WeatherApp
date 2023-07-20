@@ -53,7 +53,7 @@ export default function Home() {
     
     if (event.key === 'Enter' && event.currentTarget.value !== "") {
 
-      fetch(`http://api.openweathermap.org/geo/1.0/direct?q=${event.currentTarget.value}&limit=5&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_APPID}`, { 
+      fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${event.currentTarget.value}&limit=5&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_APPID}`, { 
             method: "GET"
           }).then(response => {
             if (response.status === 200) {
