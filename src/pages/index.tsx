@@ -41,15 +41,18 @@ export default function Home() {
   const [currentWeatherData, setCurrentWeatherData] = useState<null | WeatherData>(null);
   const [weatherLocationDataset, setWeatherLocationDataset] = useState<WeatherLocationDataset[]>([]);
   const [currentLocationName, setCurrentLocationName] = useState<null | string>(null);
+  const [currentTabIndex, setCurrentTabIndex] = useState<number>(0);
 
   useEffect(() => {
     // initTE({Collapse});
-    setCurrentLocationData(getCurrentLocationFromLocalStorage());
-    setCurrentWeatherData(getCurrentWeatherDataFromLocalStorage());
+    // setCurrentLocationData(getCurrentLocationFromLocalStorage());
+    // setCurrentWeatherData(getCurrentWeatherDataFromLocalStorage());
+    getCurrentLocation();
   }, []);
 
   const searchLocation = (event: React.KeyboardEvent<HTMLInputElement>) => {
     const element = document.getElementById('print');
+    const inputElement = event.currentTarget;
     
     if (event.key === 'Enter' && event.currentTarget.value !== "") {
 
@@ -73,7 +76,9 @@ export default function Home() {
                 if (weatherData) {
                   // element.innerText = data.current.weather[0].description;
                   console.log(weatherData.current.weather[0].description);
+                  inputElement.value = "";
                   setWeatherLocationDataset(weatherLocationDataset => [...weatherLocationDataset, {weatherData: weatherData, locationData: locationResult}]);
+                  setCurrentTabIndex(currentTabIndex+1);
                 }
               })
             }
@@ -84,7 +89,7 @@ export default function Home() {
         return;
       }
       // element.innerHTML = event.currentTarget.value;
-          fetch(`http://api.openweathermap.org/geo/1.0/direct?q=${event.currentTarget.value}&limit=10&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_APPID}`, { 
+          fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${event.currentTarget.value}&limit=10&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_APPID}`, { 
             method: "GET"
           }).then(response => {
             if (response.status === 200) {
@@ -123,7 +128,30 @@ export default function Home() {
     }
   }
 
-  const getCurrentLocation = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const updateWeatherData = (targetLocation: GeoData, isCurrentLocation: boolean) => {
+    if (isCurrentLocation) {
+      return;
+    }
+
+    if (isWeatherNeedsUpdated(targetLocation)) {
+      fetch(`./api/weatherapi?lat=${targetLocation.lat}&lon=${targetLocation.lon}`)
+      .then(response => {
+        if (response.status === 200) {
+          return response.json() as Promise<WeatherData>;
+        }
+      })
+      .then(data => {
+        if (data) {
+          const index = weatherLocationDataset.findIndex(item => item.locationData === targetLocation);
+          const weatherLocationDatasetCache = [...weatherLocationDataset];
+          weatherLocationDatasetCache[index] = {weatherData: data, locationData: targetLocation};
+          setWeatherLocationDataset(weatherLocationDatasetCache);
+        }
+      });
+    }
+  }
+
+  const getCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition((position) => {
       fetch(`https://api.openweathermap.org/geo/1.0/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&limit=5&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_APPID}`)
       .then(responsive => {
@@ -198,6 +226,20 @@ export default function Home() {
     return null;
   }
 
+  const isWeatherNeedsUpdated = (geoData: GeoData): boolean => {
+    const currentTime = Date.now();
+    const targetWeatherData = weatherLocationDataset.find((item) => {
+      return isSameLocation(item.locationData, geoData);
+    });
+    if (targetWeatherData) {
+      if (currentTime - targetWeatherData.weatherData.current.dt * 1000 < 1800000) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   const isCurrentWeatherNeedsRefresh = (geoData: GeoData): boolean => {
     const currentTime = Date.now();
     const previousWeatherData = getCurrentWeatherDataFromLocalStorage();
@@ -231,6 +273,7 @@ export default function Home() {
       <div className="mb-3 mx-3">
           <div className="relative mb-4 flex w-[90vw] flex-wrap items-stretch">
             <input
+              id='locationSearchInput'
               type="search"
               className="relative m-0 -mr-0.5 block w-[1px] min-w-0 flex-auto rounded-l border border-solid border-neutral-300 bg-transparent bg-clip-padding px-3 py-[0.25rem] text-base font-normal leading-[1.6] text-neutral-700 outline-none transition duration-200 ease-in-out focus:z-[3] focus:border-primary focus:text-neutral-700 focus:shadow-[inset_0_0_0_1px_rgb(59,113,202)] focus:outline-none dark:border-neutral-600 dark:text-neutral-200 dark:placeholder:text-neutral-200 dark:focus:border-primary"
               placeholder="Search"
@@ -244,7 +287,7 @@ export default function Home() {
               className="relative z-[2] rounded-r border-2 border-primary px-6 py-2 text-xs font-medium uppercase text-primary transition duration-150 ease-in-out hover:bg-black hover:bg-opacity-5 focus:outline-none focus:ring-0"
               type="button"
               id="button-addon3"
-              onClick={(e) => {getCurrentLocation(e)}}
+              onClick={(e) => {getCurrentLocation()}}
               data-te-ripple-init>
               Current Location
             </button>
@@ -252,7 +295,7 @@ export default function Home() {
         </div>
         {(currentWeatherData && currentLocationData) && weatherLocationDataset ? (
           <>
-            <DynamicTabContainerViewComponent currentWeatherData={currentWeatherData} currentLocationData={currentLocationData} dataList={weatherLocationDataset}/>
+            <DynamicTabContainerViewComponent currentWeatherData={currentWeatherData} currentLocationData={currentLocationData} dataList={weatherLocationDataset} updateWeatherData={updateWeatherData} currentTabIndex={currentTabIndex}/>
           </>
         ) : <></>}
     </main>

@@ -8,10 +8,7 @@ import { useEffect, useRef, useState } from "react";
 function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
   const chartComponentRef = useRef<HighchartsReact.RefObject>(null);
   const [highchartsOptions, setHighchartsOptions] =
-    useState<Highcharts.Options | null>(null);
-
-  useEffect(() => {
-    setHighchartsOptions({
+    useState<Highcharts.Options>({
       title: {
         text: "Hourly Weather",
       },
@@ -109,7 +106,58 @@ function HourlyWeatherViewDOM(props: { hourly: Current[] }) {
         },
       ],
     });
-  }, [])
+
+  useEffect(() => {
+    setHighchartsOptions({
+      ...highchartsOptions, ...{
+        xAxis: {
+          categories: props.hourly.slice(0, 24).map((item) => {
+            return new Date(item.dt * 1000).getHours().toFixed(0);
+          }),
+          accessibility: {
+            description: "Months of the year",
+          },
+          crosshair: true
+        }, series: [
+          {
+            type: "spline",
+            name:'Temperature',
+            yAxis: 0,
+            data: props.hourly.slice(0, 24).map((item) => {
+                return {
+                  y: item.temp,
+                  custom: {
+                    time: '1234',
+                    feelslike: item.feels_like,
+                    humidity: item.humidity,
+                    pop: item.pop,
+                    uvi: item.uvi,
+                    wind_deg: item.wind_deg,
+                    wind_gust: item.wind_gust,
+                    wind_speed: item.wind_speed
+                  },
+                  marker: {
+                    symbol: `url(https://openweathermap.org/img/wn/${item.weather[0].icon}.png)`
+                  },
+                  accessibility: {
+                    description: item.weather[0].description
+                  }
+                }
+            })
+          }, {
+            type: "spline",
+            name: "Precipitation",
+            yAxis: 1,
+            data: props.hourly.slice(0, 24).map((item) => {
+              return {
+                y: item.pop ? item.pop * 100 : 0
+              }
+            })
+          },
+        ]
+      }
+    });
+  }, [props.hourly])
 
   return (
     <HighchartsReact

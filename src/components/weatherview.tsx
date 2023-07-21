@@ -35,8 +35,8 @@ function WeatherView(props: {
             className="rounded-t-lg"
             src={`https://openweathermap.org/img/wn/${props.weatherData.current.weather[0].icon}@2x.png`}
             alt=""
-            width={300}
-            height={300}
+            width="100"
+            height="100"
           />
         </div>
         <div className="p-6">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   TETabs,
   TETabsContent,
@@ -6,36 +6,48 @@ import {
   TETabsPane,
 } from "tw-elements-react";
 import { GeoData } from "@/types/geoType";
-import { WeatherData } from "@/types/weatherType";
+import { WeatherData, WeatherLocationDataset } from "@/types/weatherType";
 import WeatherView from "./weatherview";
 
 function TabContainerViewDOM(props: {
   currentWeatherData: WeatherData;
   currentLocationData: GeoData;
-  dataList: { weatherData: WeatherData; locationData: GeoData }[];
+  dataList: WeatherLocationDataset[];
+  currentTabIndex: number;
+  updateWeatherData: (targetLocation: GeoData, isCurrentLocation: boolean) => any;
 }) {
-  const [justifyActive, setJustifyActive] = useState("tab0");
+  const [justifyActive, setJustifyActive] = useState(0);
 
-  const handleJustifyClick = (value: string) => {
+  useEffect(() => {
+    handleJustifyClick(props.currentTabIndex);
+  }, [props.currentTabIndex]);
+
+  const handleJustifyClick = (value: number) => {
     if (value === justifyActive) {
       return;
     }
     setJustifyActive(value);
+    if (value === 0) {
+      props.updateWeatherData(props.currentLocationData, true);
+    } else {
+      props.updateWeatherData(props.dataList[value - 1].locationData, false);
+    }
   };
+
   return (
     <div className="mb-3 overflow-y-scroll w-[90vw]">
       <TETabs justify className=" sticky top-0 bg-white/75  backdrop-blur z-[50000] ">
         <TETabsItem
-          onClick={() => handleJustifyClick(`tab0`)}
-          active={justifyActive === `tab0`}
+          onClick={() => handleJustifyClick(0)}
+          active={justifyActive === 0}
         >
           Current
         </TETabsItem>
         {props.dataList?.map((item, index) => (
           <TETabsItem
             key={index}
-            onClick={() => handleJustifyClick(`tab${index + 1}`)}
-            active={justifyActive === `tab${index + 1}`}
+            onClick={() => handleJustifyClick(index + 1)}
+            active={justifyActive === index + 1}
           >
             {item.locationData.name}
           </TETabsItem>
@@ -43,7 +55,7 @@ function TabContainerViewDOM(props: {
       </TETabs>
 
       <TETabsContent>
-        <TETabsPane show={justifyActive === `tab0`}>
+        <TETabsPane show={justifyActive === 0}>
           <WeatherView
             weatherData={props.currentWeatherData}
             locationData={props.currentLocationData}
@@ -54,7 +66,7 @@ function TabContainerViewDOM(props: {
           props.dataList?.map((item, index) => (
             <TETabsPane
               key={item.weatherData.current.dt}
-              show={justifyActive === `tab${index + 1}`}
+              show={justifyActive === index + 1}
             >
               <WeatherView
                 weatherData={item.weatherData}
