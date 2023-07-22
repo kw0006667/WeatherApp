@@ -48,6 +48,7 @@ export default function Home() {
     // setCurrentLocationData(getCurrentLocationFromLocalStorage());
     // setCurrentWeatherData(getCurrentWeatherDataFromLocalStorage());
     getCurrentLocation();
+    setWeatherLocationDataset(getAllWeatherLocationDatasetFromLocalStorage());
   }, []);
 
   const searchLocation = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -78,7 +79,8 @@ export default function Home() {
                   console.log(weatherData.current.weather[0].description);
                   inputElement.value = "";
                   setWeatherLocationDataset(weatherLocationDataset => [...weatherLocationDataset, {weatherData: weatherData, locationData: locationResult}]);
-                  setCurrentTabIndex(currentTabIndex+1);
+                  setCurrentTabIndex(weatherLocationDataset.length + 1);
+                  saveAllWeatherLocationDatasetToLocalStorage([...weatherLocationDataset, {weatherData: weatherData, locationData: locationResult}]);
                 }
               })
             }
@@ -128,8 +130,19 @@ export default function Home() {
     }
   }
 
-  const updateWeatherData = (targetLocation: GeoData, isCurrentLocation: boolean) => {
+  const updateWeatherData = (targetLocation: GeoData, isDeleteAction: boolean, isCurrentLocation: boolean,) => {
     if (isCurrentLocation) {
+      getCurrentLocation();
+      return;
+    }
+
+    if (isDeleteAction) {
+      // const targetIndex = weatherLocationDataset.findIndex(item => item.locationData === targetLocation);
+      // weatherLocationDataset.splice(targetIndex, 1);
+      const datasetCache = weatherLocationDataset.filter(item => item.locationData !== targetLocation);
+      setWeatherLocationDataset(datasetCache);
+      saveAllWeatherLocationDatasetToLocalStorage(datasetCache);
+      setCurrentTabIndex(0);
       return;
     }
 
@@ -152,6 +165,9 @@ export default function Home() {
   }
 
   const getCurrentLocation = () => {
+    console.log('GetCurrentLocation called');
+    setCurrentLocationData(getCurrentLocationFromLocalStorage());
+    setCurrentWeatherData(getCurrentWeatherDataFromLocalStorage());
     navigator.geolocation.getCurrentPosition((position) => {
       fetch(`https://api.openweathermap.org/geo/1.0/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&limit=5&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_APPID}`)
       .then(responsive => {
@@ -161,9 +177,13 @@ export default function Home() {
       })
       .then(data => {
         if (data && data.length > 0) {
-          const displayName = `${data[0].name}, ${data[0].state ? data[0].state + ", " : ""} ${data[0].country}`;
-          setCurrentLocationData(data[0]);
-          setCurrentLocationName(displayName);
+          if (!currentLocationData  || !isSameLocation(data[0], currentLocationData)) {
+            console.log('location data is not same');
+            const displayName = `${data[0].name}, ${data[0].state ? data[0].state + ", " : ""} ${data[0].country}`;
+            setCurrentLocationData(data[0]);
+            setCurrentLocationName(displayName);
+          }
+          
           saveCurrentLocationToLocalStorage(data[0]);
 
           if (isCurrentWeatherNeedsRefresh(data[0])) {
@@ -224,6 +244,23 @@ export default function Home() {
     }
 
     return null;
+  }
+
+  const saveAllWeatherLocationDatasetToLocalStorage = (dataset: WeatherLocationDataset[]) => {
+    if (window !== undefined) {
+      window.localStorage.setItem("savedWeatherLocationDataset", JSON.stringify(dataset));
+    }
+  }
+
+  const getAllWeatherLocationDatasetFromLocalStorage = (): WeatherLocationDataset[] => {
+    if (window !== undefined) {
+      const cacheDataset = window.localStorage.getItem("savedWeatherLocationDataset");
+      if (cacheDataset) {
+        return JSON.parse(cacheDataset) as WeatherLocationDataset[];
+      }
+    }
+
+    return [];
   }
 
   const isWeatherNeedsUpdated = (geoData: GeoData): boolean => {
